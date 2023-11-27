@@ -63,7 +63,7 @@ public class Main {
         
 	}
 	
-	public void userLoggedIn(String[] mUserData, boolean isEmployeer, MainWindow m_mainWindow)
+	public void userLoggedIn(String token, String[] mUserData, boolean isEmployeer, MainWindow m_mainWindow)
 	{
 		mainWindow = m_mainWindow;
 		userData = mUserData;

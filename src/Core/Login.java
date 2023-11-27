@@ -10,7 +10,21 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Base64;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
+
+import java.io.IOException;
 
 public class Login {
 	
@@ -39,31 +53,73 @@ public class Login {
 			// Rest API
 			
 			if(isEmployeer == false) {
-				try {
-				// Replace with the actual base URL of your REST API
-		            String baseUrl = "http://localhost/bank-system/";
-	
-		            // Perform login
-		            String token = performLogin(baseUrl, username, password);
-	
-		            if (token != null) {
-		                System.out.println("Login successful. Token: " + token);
-	
-		                // Use the obtained token to perform data retrieval
-		                String data = viewData(baseUrl, token);
-	
-		                if (data != null) {
-		                    System.out.println("Data retrieved: " + data);
-		                } else {
-		                    System.out.println("Error retrieving data.");
-		                }
-		            } else {
-		                System.out.println("Login failed.");
-		            }
+				
+			        
+			            String apiUrl = "http://localhost/bank-system/login/login.php";
+			          //  String apiUrl = "http://localhost/bank-system/viewdata/";
+			          // String apiUrl = "http://localhost/bank-system/login/login.php;"; 
+			           //   String apiUrl = "http://localhost/bank-system/login/index.php;"; 
 
-		        } catch (IOException e) {
-		            e.printStackTrace();
-		        }
+			            try {
+			                URL url = new URL(apiUrl);
+			                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+			                // Set the request method to POST
+			                connection.setRequestMethod("POST");
+			                connection.setRequestProperty("Content-Type", "application/json");
+			                connection.setDoOutput(true);
+
+			                // Create the JSON payload
+			                String jsonInputString = "{\"username\": \"" + username + "\", \"password\": \"" + password + "\"}";
+
+			                // Send the request
+			                try (OutputStream os = connection.getOutputStream()) {
+			                    byte[] input = jsonInputString.getBytes("utf-8");
+			                    os.write(input, 0, input.length);
+			                }
+
+			                // Read the response
+			                try (BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream(), "utf-8"))) {
+			                    StringBuilder response = new StringBuilder();
+			                    String responseLine;
+			                    while ((responseLine = br.readLine()) != null) {
+			                        response.append(responseLine.trim());
+			                    }
+
+			                    // Parse the JSON response
+			                    String jsonResponse = response.toString();
+			                    
+			                    String status = jsonResponse.contains("status") ? jsonResponse.split("\"status\":\"")[1].split("\"")[0] : null;
+			                    //System.out.println("Server Response: " + jsonResponse2);
+                               
+			                    // Extract the token from the JSON response   
+			                    //String state =  jsonResponse.contains("success") ? jsonResponse.split("\"success\":\"")[1].split("\"")[0] : null;
+			                    String token = jsonResponse.contains("token") ? jsonResponse.split("\"token\":\"")[1].split("\"")[0] : null;
+			                    System.out.println("Login acces " + status);
+			                    System.out.println("Received Token: " + token);
+
+			                    // Store and use the token for subsequent requests
+			                    if(status == "error" || token == null || token == "Unauthorized access")
+			                    {
+			                    	System.out.println("chyba");
+			                    } else {
+			                    	System.out.println("Load data");
+			                    	
+			                    	String[] userdata = userData(username,password,isEmployeer,token);
+			    					Main main = new Main();
+			    					main.userLoggedIn(token,userdata,isEmployeer,mainWindow);
+			    				
+			                    }
+			                }
+
+			                // Close the connection
+			                connection.disconnect();
+			            } catch (IOException e) {
+			                e.printStackTrace();
+			            }
+			    
+
+			    
 			} else {
 			
 				// if user exist, that data send to Main.java
@@ -72,7 +128,7 @@ public class Login {
 				{
 					String[] userdata = databaseManager.userData(username,password,isEmployeer);
 					Main main = new Main();
-					main.userLoggedIn(userdata,isEmployeer,mainWindow);
+					main.userLoggedIn("",userdata,isEmployeer,mainWindow);
 				} else {
 					message = "User or Pass is invalid!";
 				}
@@ -85,122 +141,48 @@ public class Login {
 		return errors;
 		
 	}
+	/*
+	private static String extractToken(String jsonResponse) {
+        // Implement your JSON parsing logic here
+        // For simplicity, we assume the token is directly present in the JSON response
+        return jsonResponse.contains("token") ? jsonResponse.split("\"token\":\"")[1].split("\"")[0] : null;
+    }
+	*/
+	public String[] userData(String username, String password, boolean isEmployeer,String token )
+	{
+		ArrayList<String> userDataList = new ArrayList<>();
 		
-		private String performLogin(String baseUrl, String username, String password) throws IOException {
-			
-	        String loginUrl = baseUrl + "/login/login.php";
-	        String credentials = username + ":" + password;
-	        String encodedCredentials = Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
-	        
-	        //URL url = new URL(loginUrl);
-	        
-	        URL loginUrl = new URL(loginUrl);
+		String apiUrl = "http://localhost/bank-system/viewdata/viewdata.php";
+		
+		try {
+            URL url = new URL(apiUrl);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
-            // Create the connection
-            HttpURLConnection connection = (HttpURLConnection) loginUrl.openConnection();
-            connection.setRequestMethod("POST");
-            connection.setDoOutput(true);
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Authorization", "Bearer " + token);
 
-            // Prepare the request payload (replace with your actual request format)
-            String payload = "username=" + username + "&password=" + password;
+            // Read the response
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream(), "utf-8"))) {
+                StringBuilder response = new StringBuilder();
+                String responseLine;
+                while ((responseLine = br.readLine()) != null) {
+                    response.append(responseLine.trim());
+                }
 
-            // Write the payload to the request body
-            connection.getOutputStream().write(payload.getBytes("UTF-8"));
+                // Parse and print the JSON response
+                String jsonResponse = response.toString();
+                System.out.println("Server Response: " + jsonResponse);
+            }
 
-	        /*
-	        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-	        connection.setRequestMethod("POST");
-	        connection.setRequestProperty("Authorization", "Basic " + encodedCredentials);
-	        connection.setDoOutput(true);
-	        try (OutputStream os = connection.getOutputStream()) {
-	            os.write(new byte[0]);
-	        }
-	        */
-	        int responseCode = connection.getResponseCode();
-	        try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-	            String line;
-	            StringBuilder response = new StringBuilder();
-	            while ((line = reader.readLine()) != null) {
-	                response.append(line);
-	            }
-
-	            // Check if the request was successful (HTTP status code 2xx)
-	            if (responseCode >= 200 && responseCode < 300) {
-	                return response.toString();
-	            } else {
-	                System.out.println("Login failed. Status code: " + responseCode);
-	                return null;
-	            }
-	        }
-	   
-	    }
+            // Close the connection
+            connection.disconnect();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+		
+		// Convert the ArrayList to a String array
+        String[] userData = userDataList.toArray(new String[0]);
+		return userData;	
+	}
 	
-		private String viewData(String baseUrl, String token) throws IOException {
-	        String viewDataUrl = baseUrl + "/data";
-	        URL url = new URL(viewDataUrl);
-	        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-	        connection.setRequestMethod("GET");
-
-	        // Set the authorization header with the obtained token
-	        connection.setRequestProperty("Authorization", "Bearer " + token);
-
-	        // Get the response code
-	        int responseCode = connection.getResponseCode();
-
-	        // Read and return the response
-	        //String
-	        try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-	            String line;
-	            StringBuilder response = new StringBuilder();
-	            while ((line = reader.readLine()) != null) {
-	                response.append(line);
-	            }
-
-	            // Check if the request was successful (HTTP status code 2xx)
-	            if (responseCode >= 200 && responseCode < 300) {
-	                return response.toString();
-	            } else {
-	                System.out.println("Error retrieving data. Status code: " + responseCode);
-	                return null;
-	            }
-	        }
-	    }
-		
-		public void test() {
-		    authenticate("client", "secret", "admin", "admin");
-		}
-
-		private void authenticate(String client, String secret, String username, String password) {
-		    HttpClient httpClient = HttpClient.newHttpClient();
-		    HttpRequest request = HttpRequest.newBuilder()
-		            .uri(URI.create("http://localhost:8080/oauth/token"))
-		            .header("Authorization", getBasicAuthHeader(client, secret))
-		            .header("Content-Type", "application/x-www-form-urlencoded")
-		            .POST(HttpRequest.BodyPublishers.ofString(getAuthRequestBody(username, password)))
-		            .build();
-		    try {
-		        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-		        if (response.statusCode() == HttpStatus.OK.value()) {
-		            String responseText = response.body();
-		            System.out.println("Response: " + responseText);
-		            // Using Jackson to convert JSON responce to a map:
-		            Map<String, Object> map = new ObjectMapper().readValue(responseText, Map.class);
-		            String accessToken = (String) map.get("access_token");
-		            System.out.println("Access token: " + accessToken);
-		        } else {
-		            System.out.println("Error: " + response.statusCode());
-		        }
-		    } catch (IOException | InterruptedException e) {
-		        e.printStackTrace();
-		    }
-		}
-
-		private String getBasicAuthHeader(String client, String secret) {
-		    String str = client + ":" + secret;
-		    return "Basic " + Base64.getEncoder().encodeToString(str.getBytes());
-		}
-
-		private String getAuthRequestBody(String username, String password) {
-		    return "grant_type=password&username=" + username + "&password=" + password;
-		}
 }

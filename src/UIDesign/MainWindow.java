@@ -43,6 +43,9 @@ public class MainWindow extends JFrame {
     private JRadioButton registerRdbtnFemale;
     private JCheckBox registerChckbxEmployeer; 
     
+    private boolean isEmployeer;
+    private String token;
+    
 	/**
 	 * Create the frame.
 	 */
@@ -394,6 +397,11 @@ public class MainWindow extends JFrame {
 		customerPanel.add(lblNewLabel);
 		
 		JButton btnCustomerLogout = new JButton("logout");
+		btnCustomerLogout.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+            	checkInputLoginRegister("logout");
+            }
+        });
 		btnCustomerLogout.setBounds(848, 11, 100, 30);
 		customerPanel.add(btnCustomerLogout);
 		
@@ -549,7 +557,7 @@ public class MainWindow extends JFrame {
 	        
 	        Login login = new Login(); 
 			String[] getError = login.checkLogin(username,password,loginChckbxEmployyer.isSelected(), this);
-			
+			isEmployeer = registerChckbxEmployeer.isSelected();
 			if(getError.length > 0 )
 			{
 				userError.setText(getError[0]);
@@ -568,12 +576,25 @@ public class MainWindow extends JFrame {
 	        Register register = new Register(); 
 			String[] getError = register.checkRegister(username,password,email,name,lastname,registerChckbxEmployeer.isSelected(),this);
 			 
+			isEmployeer = registerChckbxEmployeer.isSelected();
+			
 			if(getError.length > 0 )
 			{
 				userError.setText(getError[0]);
 				passwordError.setText(getError[1]);
 				loginMessage.setText(getError[2]);
 			}
+		}
+		
+		else if(type == "logout")
+		{
+			
+			//Logout logout = new Logout(); 
+			//logout.checkLogin(isEmployeer);
+			
+			setSizeWindow("forLogin");	
+			centerFrameOnScreen();
+			showPanel("loginPanel");
 		}
 		
 		

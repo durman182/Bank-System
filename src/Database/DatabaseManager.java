@@ -40,26 +40,39 @@ public class DatabaseManager {
 	}
 	
 	private void createTableIfNotExists() {
-		// customers
+		// user logged
 		try {
 	        Statement statement = connection.createStatement();
-	        String query = "CREATE TABLE IF NOT EXISTS customers (" +
-	                "id INT AUTO_INCREMENT PRIMARY KEY," +
-	                "name VARCHAR(255) NOT NULL," +
-	                "lastname VARCHAR(255) NOT NULL," +
-	                "username VARCHAR(255) NOT NULL," +
-	                "password VARCHAR(255) NOT NULL," +
-	                "email VARCHAR(255) NOT NULL," +
-	                "genre VARCHAR(255) NOT NULL," +
-	                "balance VARCHAR(255) NOT NULL," +
-	                "savings VARCHAR(255) NOT NULL," +
-	                "last_login VARCHAR(255) NOT NULL," +
-	                "date_registration VARCHAR(255) NOT NULL" +
+	        String query = "CREATE TABLE IF NOT EXISTS user_logged (" +
+	                "user_id VARCHAR(255) NOT NULL," +
+	                "token VARCHAR(255) NOT NULL," +
+	                "login_time VARCHAR(255) NOT NULL," +
+	                "expire VARCHAR(255) NOT NULL" +
 	                ");";
 	        statement.executeUpdate(query);
 	    } catch (SQLException e) {
 	        e.printStackTrace();
 	    }
+		
+		try {
+			Statement statement = connection.createStatement();
+			String query = "CREATE TABLE IF NOT EXISTS customers (" +
+					"id INT AUTO_INCREMENT PRIMARY KEY," +
+					"name VARCHAR(255) NOT NULL," +
+					"lastname VARCHAR(255) NOT NULL," +
+					"username VARCHAR(255) NOT NULL," +
+					"password VARCHAR(255) NOT NULL," +
+					"email VARCHAR(255) NOT NULL," +
+					"genre VARCHAR(255) NOT NULL," +
+					"balance VARCHAR(255) NOT NULL," +
+					"savings VARCHAR(255) NOT NULL," +
+					"last_login VARCHAR(255) NOT NULL," +
+					"date_registration VARCHAR(255) NOT NULL" +
+					");";
+			statement.executeUpdate(query);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 		
 		// employeers
 		try {
@@ -264,7 +277,7 @@ public class DatabaseManager {
         //return Integer.toString(password.hashCode());
 		return password;
     }
-    
+
 	public void logoutUser() {
         // Implement logout logic if needed
         System.out.println("Logout successful.");
