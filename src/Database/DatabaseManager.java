@@ -64,7 +64,7 @@ public class DatabaseManager {
 					"password VARCHAR(255) NOT NULL," +
 					"email VARCHAR(255) NOT NULL," +
 					"genre VARCHAR(255) NOT NULL," +
-					"balance VARCHAR(255) NOT NULL," +
+					"accounts VARCHAR(255) NOT NULL," +
 					"savings VARCHAR(255) NOT NULL," +
 					"last_login VARCHAR(255) NOT NULL," +
 					"date_registration VARCHAR(255) NOT NULL" +
